@@ -141,6 +141,11 @@ const Page = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <Image
+            source={require('../assets/images/wood_back.png')}
+            style={styles.headerBackground}
+            resizeMode="cover"
+          />
+          <Image
             source={require('../assets/images/foodie-logo.png')}
             style={styles.headerLogo}
             resizeMode="contain"
@@ -177,7 +182,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f9fa',
   },
   loaderContainer: {
     flex: 1,
@@ -185,51 +190,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContainer: {
-    padding: 10,
+    padding: 16,
   },
   foodItem: {
     flexDirection: 'row',
     backgroundColor: '#ffffff',
-    borderRadius: 10,
-    marginVertical: 10,
-    padding: 15,
+    borderRadius: 12,
+    marginVertical: 8,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff6b6b',
   },
   foodImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    marginRight: 15,
+    width: 110,
+    height: 110,
+    borderRadius: 8,
+    marginRight: 12,
   },
   foodDetails: {
     flex: 1,
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   foodName: {
-    fontSize: 20,
-    color: '#2c3e50',
+    fontSize: 18,
+    color: '#2d3436',
+    lineHeight: 24,
   },
   foodPrice: {
-    fontSize: 18,
-    color: '#27ae60',
-    fontWeight: '600',
+    fontSize: 16,
+    color: '#00b894',
+    fontWeight: '700',
+    marginTop: 4,
   },
   foodInfo: {
-    fontSize: 14,
-    color: '#7f8c8d',
+    fontSize: 13,
+    color: '#636e72',
+    marginTop: 4,
   },
   foodRating: {
-    fontSize: 16,
-    color: '#f39c12',
+    fontSize: 14,
+    color: '#fdcb6e',
     fontWeight: '600',
+    marginTop: 4,
   },
   errorText: {
-    fontSize: 18,
-    color: 'red',
+    fontSize: 16,
+    color: '#ff4444',
     textAlign: 'center',
     margin: 20,
   },
@@ -240,38 +251,50 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    fontSize: 18,
-    color: '#7f8c8d',
+    fontSize: 16,
+    color: '#636e72',
   },
   retryButton: {
-    backgroundColor: '#3498db',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
-    marginTop: 10,
+    backgroundColor: '#ff6b6b',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 12,
   },
   retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '600',
   },
   header: {
-    height: 120,
-    backgroundColor: '#f0f7ff',
+    height: 100,
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#e3f2fd',
-    elevation: 30,
+    borderBottomColor: '#e9ecef',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     paddingTop: 0,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   headerLogo: {
-    width: 250,
-    height: 100,
+    width: 200,
+    height: 80,
+    zIndex: 1,
   },
   nameContainer: {
     flexDirection: 'row',
@@ -280,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   boldText: {
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, RefreshControl, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, RefreshControl, TouchableOpacity, Image, StatusBar } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
+import ChatBot from './components/ChatBot';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -15,7 +16,19 @@ interface FoodItem {
   image_url: string;
 }
 
-const FoodList = () => {
+const formatText = (text: string) => {
+  // Replace **text** with styled bold text
+  return text.split('**').map((part, index) => {
+    // Every odd index (1, 3, 5, etc.) should be bold
+    return index % 2 === 1 ? (
+      <Text key={index} style={[styles.foodName, styles.boldText]}>{part}</Text>
+    ) : (
+      <Text key={index} style={styles.foodName}>{part}</Text>
+    );
+  });
+};
+
+const Page = () => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,24 +38,47 @@ const FoodList = () => {
     try {
       console.log('Fetching food items...');
       
+      // First, check if we can connect to the table
+      const { data: tableCheck, error: tableError } = await supabase
+        .from('Food')
+        .select('count');
+
+      if (tableError) {
+        console.error('Table check error:', tableError);
+        throw new Error(`Database table error: ${tableError.message}`);
+      }
+
+      // Now fetch the actual data
       const { data, error } = await supabase
         .from('Food')
-        .select('id, name, price, rating, veg, calories, image_url')
+        .select('*')
         .order('id');
 
       console.log('Supabase response:', { data, error });
 
       if (error) {
+        console.error('Data fetch error:', error);
         throw error;
       }
 
       if (data) {
-        console.log('Setting food items:', data);
+        console.log('Received food items:', data);
+        // Log the structure of the first item to help with debugging
+        if (data.length > 0) {
+          console.log('First item structure:', Object.keys(data[0]));
+        }
         setFoodItems(data);
+      } else {
+        console.log('No data received from the database');
+        setFoodItems([]);
       }
     } catch (err) {
-      console.error('Error fetching food items:', err);
-      setError('Failed to load food items. Please try again later.');
+      console.error('Error in fetchFoodItems:', err);
+      setError(
+        err instanceof Error 
+          ? `Error: ${err.message}` 
+          : 'Failed to load food items. Please check your database connection.'
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -62,7 +98,9 @@ const FoodList = () => {
     <TouchableOpacity style={styles.foodItem}>
       <Image source={{ uri: item.image_url }} style={styles.foodImage} />
       <View style={styles.foodDetails}>
-        <Text style={styles.foodName}>{item.name}</Text>
+        <View style={styles.nameContainer}>
+          {formatText(item.name)}
+        </View>
         <Text style={styles.foodPrice}>₹{item.price.toFixed(2)}</Text>
         <Text style={styles.foodInfo}>
           {item.veg === 'Yes' ? '🥗 Veg' : '🍖 Non-Veg'} | {item.calories} kcal
@@ -74,48 +112,69 @@ const FoodList = () => {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#3498db" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#3498db" barStyle="light-content" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#3498db" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchFoodItems}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#3498db" barStyle="light-content" />
+        <View style={styles.container}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchFoodItems}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {foodItems.length > 0 ? (
-        <FlatList
-          data={foodItems}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderFoodItem}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No food items found</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchFoodItems}>
-            <Text style={styles.retryButtonText}>Refresh</Text>
-          </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor="#3498db" barStyle="light-content" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image
+            source={require('../assets/images/foodie-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
         </View>
-      )}
+        {foodItems.length > 0 ? (
+          <FlatList
+            data={foodItems}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderFoodItem}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No food items found</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchFoodItems}>
+              <Text style={styles.retryButtonText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <ChatBot foodItems={foodItems} />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f0f0f0',
@@ -152,7 +211,6 @@ const styles = StyleSheet.create({
   },
   foodName: {
     fontSize: 20,
-    fontWeight: 'bold',
     color: '#2c3e50',
   },
   foodPrice: {
@@ -197,6 +255,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  header: {
+    height: 120,
+    backgroundColor: '#f0f7ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e3f2fd',
+    elevation: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    paddingTop: 0,
+  },
+  headerLogo: {
+    width: 250,
+    height: 100,
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
 });
 
-export default FoodList;
+export default Page;

@@ -1,6 +1,5 @@
-// index.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 
@@ -9,6 +8,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 interface FoodItem {
   id: number;
   name: string;
+  price: number;
+  rating: number;
+  veg: string;
+  calories: number;
+  image_url: string;
 }
 
 const FoodList = () => {
@@ -22,8 +26,8 @@ const FoodList = () => {
       console.log('Fetching food items...');
       
       const { data, error } = await supabase
-        .from('food_items')
-        .select('id, name')
+        .from('Food')
+        .select('id, name, price, rating, veg, calories, image_url')
         .order('id');
 
       console.log('Supabase response:', { data, error });
@@ -56,14 +60,22 @@ const FoodList = () => {
 
   const renderFoodItem = ({ item }: { item: FoodItem }) => (
     <TouchableOpacity style={styles.foodItem}>
-      <Text style={styles.foodName}>{item.name}</Text>
+      <Image source={{ uri: item.image_url }} style={styles.foodImage} />
+      <View style={styles.foodDetails}>
+        <Text style={styles.foodName}>{item.name}</Text>
+        <Text style={styles.foodPrice}>₹{item.price.toFixed(2)}</Text>
+        <Text style={styles.foodInfo}>
+          {item.veg === 'Yes' ? '🥗 Veg' : '🍖 Non-Veg'} | {item.calories} kcal
+        </Text>
+        <Text style={styles.foodRating}>⭐ {item.rating.toFixed(1)}</Text>
+      </View>
     </TouchableOpacity>
   );
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#3498db" />
       </View>
     );
   }
@@ -82,23 +94,15 @@ const FoodList = () => {
   return (
     <SafeAreaView style={styles.container}>
       {foodItems.length > 0 ? (
-        <View style={styles.mainContainer}>
-          <FlatList
-            data={foodItems}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderFoodItem}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-          <TouchableOpacity 
-            style={styles.refreshButton}
-            onPress={fetchFoodItems}
-          >
-            <Text style={styles.refreshButtonText}>Refresh Data</Text>
-          </TouchableOpacity>
-        </View>
+        <FlatList
+          data={foodItems}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFoodItem}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No food items found</Text>
@@ -114,38 +118,59 @@ const FoodList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f0f0f0',
   },
-  mainContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  loader: {
+  loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   listContainer: {
     padding: 10,
-    paddingBottom: 80, // Add padding to avoid list items being hidden behind the button
   },
   foodItem: {
-    padding: 15,
-    backgroundColor: '#f8f8f8',
-    marginVertical: 5,
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
+    marginVertical: 10,
+    padding: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  foodImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 15,
+  },
+  foodDetails: {
+    flex: 1,
+    justifyContent: 'space-around',
   },
   foodName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  foodPrice: {
+    fontSize: 18,
+    color: '#27ae60',
+    fontWeight: '600',
+  },
+  foodInfo: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  foodRating: {
+    fontSize: 16,
+    color: '#f39c12',
+    fontWeight: '600',
   },
   errorText: {
-    fontSize: 16,
+    fontSize: 18,
     color: 'red',
     textAlign: 'center',
     margin: 20,
@@ -157,40 +182,20 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
+    fontSize: 18,
+    color: '#7f8c8d',
   },
   retryButton: {
     backgroundColor: '#3498db',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
+    marginTop: 10,
   },
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  refreshButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#2ecc71',
-    paddingVertical: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  refreshButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
 
